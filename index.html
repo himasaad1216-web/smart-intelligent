@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f8fa">
+  <title>Many — Better answers, together</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #1e2128;
+      --muted: #777d89;
+      --line: #e9ebef;
+      --paper: #fff;
+      --canvas: #f7f8fa;
+      --purple: #6852d9;
+      --purple-soft: #f0edff;
+      --green: #23866d;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      -webkit-font-smoothing: antialiased;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--canvas); color: var(--ink); }
+    button, textarea, input { font: inherit; }
+    button { cursor: pointer; }
+    .layout { min-height: 100vh; display: grid; grid-template-columns: 248px minmax(0, 1fr); }
+    .sidebar {
+      background: #fff; border-right: 1px solid var(--line); padding: 25px 17px;
+      display: flex; flex-direction: column; gap: 29px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; padding: 0 9px; font-size: 19px; font-weight: 760; letter-spacing: -.7px; }
+    .brand-mark {
+      width: 30px; height: 30px; display: grid; place-items: center; border-radius: 10px;
+      color: #fff; background: var(--purple); font-size: 17px;
+    }
+    .new-chat {
+      border: 1px solid #e8e4fc; background: var(--purple-soft); color: #5642be; border-radius: 10px;
+      text-align: left; font-weight: 650; padding: 11px 12px;
+    }
+    .side-label { color: #969ba5; text-transform: uppercase; letter-spacing: 1.15px; font-size: 10px; font-weight: 700; padding: 0 10px; margin-bottom: 9px; }
+    .side-item { display: flex; gap: 10px; align-items: center; color: #5c626e; padding: 10px; border-radius: 9px; font-size: 13px; }
+    .side-item.active { background: #f5f3ff; color: #5745c2; font-weight: 650; }
+    .side-icon { width: 17px; text-align: center; font-size: 15px; }
+    .sidebar-bottom { margin-top: auto; }
+    .secure-note { border: 1px solid var(--line); border-radius: 11px; padding: 13px; color: #727985; font-size: 11px; line-height: 1.55; }
+    .secure-note strong { display: block; color: #454a54; margin-bottom: 4px; font-size: 12px; }
+    main { min-width: 0; }
+    .topbar { height: 66px; border-bottom: 1px solid var(--line); display: flex; align-items: center; justify-content: space-between; padding: 0 34px; background: rgba(255,255,255,.76); }
+    .topbar-title { font-size: 13px; font-weight: 620; }
+    .topbar-right { display: flex; align-items: center; gap: 12px; color: var(--muted); font-size: 12px; }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #c6cad2; display: inline-block; margin-right: 6px; }
+    .status-dot.ready { background: #38a780; }
+    .key-button { border: 1px solid var(--line); color: #444a55; background: white; border-radius: 8px; padding: 8px 11px; font-size: 12px; font-weight: 600; }
+    .content { max-width: 1030px; margin: 0 auto; padding: 52px 34px 65px; }
+    .intro { text-align: center; margin-bottom: 34px; }
+    .eyebrow { color: var(--purple); text-transform: uppercase; letter-spacing: 1.5px; font-weight: 750; font-size: 10px; }
+    h1 { font-size: clamp(31px, 4vw, 43px); letter-spacing: -1.9px; line-height: 1.14; margin: 13px 0 10px; font-weight: 720; }
+    .intro p { margin: 0; color: var(--muted); font-size: 14px; }
+    .composer { background: #fff; border: 1px solid #e5e7ec; border-radius: 15px; box-shadow: 0 6px 26px rgba(31, 35, 48, .045); padding: 17px; }
+    .composer:focus-within { border-color: #c7bef7; box-shadow: 0 0 0 3px rgba(104, 82, 217, .08); }
+    textarea { border: 0; resize: vertical; outline: 0; width: 100%; min-height: 100px; max-height: 300px; color: var(--ink); font-size: 14px; line-height: 1.6; }
+    textarea::placeholder { color: #a0a5af; }
+    .composer-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-top: 1px solid #f0f1f4; padding-top: 13px; }
+    .composer-hint { font-size: 11px; color: #9197a2; }
+    .ask-button { border: 0; background: var(--purple); color: #fff; border-radius: 9px; padding: 10px 15px; font-size: 12px; font-weight: 660; box-shadow: 0 3px 8px rgba(104,82,217,.2); }
+    .ask-button:hover { background: #5743c2; }
+    .ask-button:disabled { opacity: .55; cursor: wait; }
+    .model-section { margin: 24px 0 0; }
+    .section-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 11px; }
+    .section-heading strong { font-size: 12px; font-weight: 650; }
+    .section-heading span { color: #9298a2; font-size: 11px; }
+    .model-list { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 8px; }
+    .model-option {
+      min-height: 65px; border: 1px solid var(--line); background: #fff; border-radius: 10px;
+      padding: 10px 8px; text-align: left; color: #333842; transition: border-color .15s, background .15s;
+    }
+    .model-option:hover { border-color: #cec7f5; }
+    .model-option[aria-pressed="true"] { border-color: #c5bcf3; background: #fbfaff; }
+    .model-option[aria-pressed="false"] { opacity: .52; }
+    .provider { display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 650; white-space: nowrap; }
+    .provider-mark { width: 19px; height: 19px; display: grid; place-items: center; border-radius: 6px; background: #f1f2f5; color: #4f5561; font-size: 10px; font-weight: 750; }
+    .provider-model { padding: 5px 0 0 26px; color: #969ba5; font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .synthesis-row { display: flex; align-items: center; justify-content: space-between; padding: 17px 1px 0; color: #606672; font-size: 12px; }
+    .synthesis-copy { display: flex; align-items: center; gap: 9px; }
+    .synthesis-copy input { accent-color: var(--purple); }
+    .synthesis-note { color: #9a9fa8; font-size: 10px; }
+    .results { margin-top: 39px; }
+    .results-header { display: flex; align-items: center; justify-content: space-between; gap: 15px; margin-bottom: 14px; }
+    .results-header h2 { margin: 0; font-size: 17px; letter-spacing: -.3px; }
+    .results-count { color: #8d929d; font-size: 11px; }
+    .empty-state { border: 1px dashed #dfe2e8; border-radius: 12px; text-align: center; padding: 32px 20px; color: #9297a1; font-size: 12px; background: rgba(255,255,255,.55); }
+    .empty-symbol { color: #aaa2db; font-size: 23px; margin-bottom: 8px; }
+    .result-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+    .answer-card { background: white; border: 1px solid var(--line); border-radius: 11px; padding: 15px 16px; min-width: 0; }
+    .answer-card.featured { grid-column: 1 / -1; border-color: #d8d2fa; background: linear-gradient(120deg, #fff, #fcfbff); }
+    .answer-head { display: flex; justify-content: space-between; gap: 12px; align-items: center; border-bottom: 1px solid #f0f1f4; padding-bottom: 10px; }
+    .answer-model { font-size: 12px; font-weight: 700; }
+    .answer-meta { color: #9a9fa8; font-size: 10px; text-align: right; }
+    .answer-body { color: #484d57; font-size: 12px; line-height: 1.75; white-space: pre-wrap; overflow-wrap: anywhere; padding-top: 11px; }
+    .answer-body strong { color: #252a33; }
+    .answer-card.error .answer-body { color: #a34545; }
+    .loading { display: flex; align-items: center; gap: 9px; color: #777d89; font-size: 12px; padding: 15px 2px; }
+    .spinner { width: 13px; height: 13px; border: 2px solid #e4e0fb; border-top-color: var(--purple); border-radius: 50%; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .hidden { display: none !important; }
+    .modal-backdrop { position: fixed; inset: 0; z-index: 3; display: grid; place-items: center; padding: 18px; background: rgba(25, 27, 36, .3); }
+    .modal { background: #fff; width: min(100%, 425px); border-radius: 15px; padding: 23px; box-shadow: 0 20px 70px rgba(20, 22, 32, .2); }
+    .modal h2 { font-size: 19px; margin: 0 0 8px; }
+    .modal p { color: #737985; font-size: 12px; line-height: 1.6; margin: 0 0 16px; }
+    .modal input { width: 100%; border: 1px solid #dfe2e8; border-radius: 8px; padding: 11px 12px; outline: none; font-size: 13px; }
+    .modal input:focus { border-color: #afa3ef; box-shadow: 0 0 0 3px rgba(104,82,217,.09); }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+    .plain-button { background: white; border: 1px solid var(--line); color: #626873; border-radius: 8px; padding: 9px 12px; font-size: 12px; }
+    .modal-error { color: #b13c3c; font-size: 11px; margin-top: 8px; }
+    .disclaimer { text-align: center; color: #a0a5ae; font-size: 10px; padding: 19px 0; }
+    @media (max-width: 860px) {
+      .layout { grid-template-columns: 205px minmax(0, 1fr); }
+      .model-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+      .content { padding-left: 24px; padding-right: 24px; }
+    }
+    @media (max-width: 620px) {
+      .layout { display: block; }
+      .sidebar { display: none; }
+      .topbar { height: 56px; padding: 0 17px; }
+      .content { padding: 38px 16px 45px; }
+      .intro { margin-bottom: 26px; }
+      .intro p { font-size: 12px; }
+      .model-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .model-option { min-height: 58px; }
+      .result-grid { grid-template-columns: 1fr; }
+      .answer-card.featured { grid-column: auto; }
+      .synthesis-note { max-width: 130px; text-align: right; line-height: 1.4; }
+      .composer-hint { max-width: 170px; line-height: 1.4; }
+    }
+  </style>
+</head>
+<body>
+  <div class="layout">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">✳</span> many</div>
+      <button class="new-chat" id="new-chat">＋ &nbsp;New comparison</button>
+      <div>
+        <div class="side-label">Workspace</div>
+        <div class="side-item active"><span class="side-icon">▦</span>Compare answers</div>
+        <div class="side-item"><span class="side-icon">◷</span>Recent sessions</div>
+      </div>
+      <div class="sidebar-bottom">
+        <div class="side-label">About Many</div>
+        <div class="secure-note"><strong>One question. Many minds.</strong>Compare independent AI answers, then ask for a synthesis of the strongest ideas.</div>
+      </div>
+    </aside>
+    <main>
+      <header class="topbar">
+        <div class="topbar-title">Compare answers</div>
+        <div class="topbar-right">
+          <span><i class="status-dot" id="status-dot"></i><span id="status-label">API key not connected</span></span>
+          <button class="key-button" id="open-key">Add API key</button>
+        </div>
+      </header>
+      <div class="content">
+        <section class="intro">
+          <div class="eyebrow">A little more intelligence</div>
+          <h1>Better answers, together.</h1>
+          <p>Ask once. Hear from seven leading AI models. Find the answer that holds up.</p>
+        </section>
+        <form id="ask-form">
+          <div class="composer">
+            <textarea id="prompt" aria-label="Your question" placeholder="What would you like to figure out?"></textarea>
+            <div class="composer-footer">
+              <span class="composer-hint">Separate provider requests; usage may be billed by OpenRouter.</span>
+              <button class="ask-button" id="ask-button" type="submit">Ask all models <span aria-hidden="true">↗</span></button>
+            </div>
+          </div>
+          <section class="model-section" aria-label="Choose AI models">
+            <div class="section-heading"><strong>Choose your models</strong><span id="selected-count">7 selected</span></div>
+            <div class="model-list" id="model-list"></div>
+          </section>
+          <label class="synthesis-row">
+            <span class="synthesis-copy"><input type="checkbox" id="synthesize" checked><span><strong>Bring the best together</strong></span></span>
+            <span class="synthesis-note">One extra model call synthesizes all replies</span>
+          </label>
+        </form>
+        <section class="results" aria-live="polite">
+          <div class="results-header"><h2 id="results-title">Your answers</h2><span class="results-count" id="results-count"></span></div>
+          <div class="empty-state" id="empty-state"><div class="empty-symbol">✳</div>Ask your first question to see different perspectives side by side.</div>
+          <div class="result-grid hidden" id="result-grid"></div>
+        </section>
+        <div class="disclaimer">AI can make mistakes. Compare responses and verify important information.</div>
+      </div>
+    </main>
+  </div>
+  <div class="modal-backdrop hidden" id="key-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal">
+      <h2 id="modal-title">Connect your models</h2>
+      <p>Paste an <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer">OpenRouter API key</a> to query all seven providers. The key is held in memory in this tab only; it is sent directly to OpenRouter and is never saved by this page.</p>
+      <input id="api-key" type="password" autocomplete="off" spellcheck="false" placeholder="sk-or-v1-..." aria-label="OpenRouter API key">
+      <div class="modal-error hidden" id="modal-error"></div>
+      <div class="modal-actions"><button class="plain-button" id="cancel-key" type="button">Cancel</button><button class="ask-button" id="save-key" type="button">Connect key</button></div>
+    </div>
+  </div>
+  <script>
+    const models = [
+      { id: "x-ai/grok-4.7", name: "Grok", model: "Grok 4.7", mark: "x" },
+      { id: "openai/gpt-6.1-sol", name: "ChatGPT", model: "GPT-6.1 Sol", mark: "◎" },
+      { id: "google/gemini-4-argon", name: "Gemini", model: "4 Argon", mark: "✦" },
+      { id: "meta-llama/llama-4-maverick", name: "Meta AI", model: "Llama 4 Maverick", mark: "∞" },
+      { id: "deepseek/deepseek-v4.1-flash", name: "DeepSeek", model: "V4.1 Flash", mark: "◈" },
+      { id: "anthropic/claude-sonnet-5.5", name: "Claude", model: "Sonnet 5.5", mark: "✳" },
+      { id: "perplexity/sonar-pro", name: "Perplexity", model: "Sonar Pro", mark: "◉" }
+    ];
+    const selected = new Set(models.map(model => model.id));
+    let apiKey = "";
+    let busy = false;
+    const modelList = document.getElementById("model-list");
+    const modal = document.getElementById("key-modal");
+    const keyInput = document.getElementById("api-key");
+    const askButton = document.getElementById("ask-button");
+
+    function renderModels() {
+      modelList.innerHTML = "";
+      for (const model of models) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "model-option";
+        button.setAttribute("aria-pressed", String(selected.has(model.id)));
+        button.setAttribute("aria-label", `${model.name}, ${model.model}`);
+        const provider = document.createElement("span");
+        provider.className = "provider";
+        const mark = document.createElement("span");
+        mark.className = "provider-mark";
+        mark.textContent = model.mark;
+        const name = document.createElement("span");
+        name.textContent = model.name;
+        provider.append(mark, name);
+        const modelName = document.createElement("div");
+        modelName.className = "provider-model";
+        modelName.textContent = model.model;
+        button.append(provider, modelName);
+        button.addEventListener("click", () => {
+          if (busy) return;
+          selected.has(model.id) ? selected.delete(model.id) : selected.add(model.id);
+          renderModels();
+        });
+        modelList.append(button);
+      }
+      document.getElementById("selected-count").textContent = `${selected.size} selected`;
+    }
+    function setKeyStatus(connected) {
+      document.getElementById("status-dot").classList.toggle("ready", connected);
+      document.getElementById("status-label").textContent = connected ? "API key ready" : "API key not connected";
+      document.getElementById("open-key").textContent = connected ? "Change API key" : "Add API key";
+    }
+    function showKeyModal() {
+      document.getElementById("modal-error").classList.add("hidden");
+      keyInput.value = apiKey;
+      modal.classList.remove("hidden");
+      keyInput.focus();
+    }
+    function closeKeyModal() { modal.classList.add("hidden"); }
+    function makeCard(model, featured) {
+      const card = document.createElement("article");
+      card.className = `answer-card${featured ? " featured" : ""}`;
+      const head = document.createElement("div");
+      head.className = "answer-head";
+      const title = document.createElement("span");
+      title.className = "answer-model";
+      title.textContent = model.name;
+      const meta = document.createElement("span");
+      meta.className = "answer-meta";
+      meta.textContent = model.model;
+      head.append(title, meta);
+      const body = document.createElement("div");
+      body.className = "answer-body";
+      card.append(head, body);
+      return { card, body };
+    }
+    async function askModel(model, prompt) {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": location.href.startsWith("file:") ? "http://localhost" : location.origin,
+          "X-Title": "Many AI"
+        },
+        body: JSON.stringify({
+          model: model.id,
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.5
+        })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data.error?.message || `Request failed (${response.status})`);
+      }
+      const answer = data.choices?.[0]?.message?.content;
+      if (!answer || typeof answer !== "string") throw new Error("The model returned an empty response.");
+      return answer;
+    }
+    function setLoading(card, text) {
+      card.body.textContent = "";
+      const loading = document.createElement("div");
+      loading.className = "loading";
+      const spinner = document.createElement("span");
+      spinner.className = "spinner";
+      const label = document.createElement("span");
+      label.textContent = text;
+      loading.append(spinner, label);
+      card.body.append(loading);
+    }
+    document.getElementById("open-key").addEventListener("click", showKeyModal);
+    document.getElementById("cancel-key").addEventListener("click", closeKeyModal);
+    modal.addEventListener("click", event => { if (event.target === modal) closeKeyModal(); });
+    document.addEventListener("keydown", event => { if (event.key === "Escape") closeKeyModal(); });
+    document.getElementById("save-key").addEventListener("click", () => {
+      const value = keyInput.value.trim();
+      if (!value) {
+        const error = document.getElementById("modal-error");
+        error.textContent = "Enter your OpenRouter API key to continue.";
+        error.classList.remove("hidden");
+        keyInput.focus();
+        return;
+      }
+      apiKey = value;
+      setKeyStatus(true);
+      closeKeyModal();
+    });
+    document.getElementById("new-chat").addEventListener("click", () => {
+      if (busy) return;
+      document.getElementById("prompt").value = "";
+      document.getElementById("result-grid").replaceChildren();
+      document.getElementById("result-grid").classList.add("hidden");
+      document.getElementById("empty-state").classList.remove("hidden");
+      document.getElementById("results-title").textContent = "Your answers";
+      document.getElementById("results-count").textContent = "";
+      document.getElementById("prompt").focus();
+    });
+    document.getElementById("ask-form").addEventListener("submit", async event => {
+      event.preventDefault();
+      if (busy) return;
+      const prompt = document.getElementById("prompt").value.trim();
+      if (!prompt) {
+        document.getElementById("prompt").focus();
+        return;
+      }
+      if (!apiKey) {
+        showKeyModal();
+        return;
+      }
+      const chosen = models.filter(model => selected.has(model.id));
+      if (chosen.length === 0) {
+        document.getElementById("results-count").textContent = "Select at least one model.";
+        return;
+      }
+      busy = true;
+      askButton.disabled = true;
+      askButton.textContent = "Thinking…";
+      modelList.querySelectorAll("button").forEach(button => { button.disabled = true; });
+      document.getElementById("empty-state").classList.add("hidden");
+      const grid = document.getElementById("result-grid");
+      grid.replaceChildren();
+      grid.classList.remove("hidden");
+      document.getElementById("results-title").textContent = "Thinking together";
+      document.getElementById("results-count").textContent = `0 of ${chosen.length} answered`;
+      const results = new Map();
+      const cards = new Map();
+      for (const model of chosen) {
+        const elements = makeCard(model, false);
+        cards.set(model.id, elements);
+        grid.append(elements.card);
+        setLoading(elements, "Waiting for response…");
+      }
+      let completed = 0;
+      const outcomes = await Promise.all(chosen.map(async model => {
+        const elements = cards.get(model.id);
+        try {
+          const answer = await askModel(model, prompt);
+          results.set(model.id, answer);
+          elements.body.textContent = answer;
+          return { ok: true, name: model.name };
+        } catch (error) {
+          elements.card.classList.add("error");
+          elements.body.textContent = error instanceof Error ? error.message : "The request failed. Please try again.";
+          return { ok: false, name: model.name };
+        } finally {
+          completed++;
+          document.getElementById("results-count").textContent = `${completed} of ${chosen.length} answered`;
+        }
+      }));
+      if (document.getElementById("synthesize").checked && results.size > 0) {
+        const synthesisModel = { id: "anthropic/claude-sonnet-5.5", name: "The combined answer", model: "Synthesized from all successful replies" };
+        const synthesis = makeCard(synthesisModel, true);
+        grid.prepend(synthesis.card);
+        setLoading(synthesis, "Finding the strongest shared answer…");
+        const sourceText = chosen.filter(model => results.has(model.id))
+          .map(model => `### ${model.name} (${model.model})\n${results.get(model.id)}`)
+          .join("\n\n");
+        try {
+          const answer = await askModel(synthesisModel,
+            `Create a clear, accurate, useful answer to the user's question by comparing these independent AI responses. Combine their strongest points, resolve disagreements when possible, and explicitly flag meaningful uncertainty or conflicting claims. Do not claim consensus where there is none. Cite which model said what only when useful. Do not invent sources or facts.\n\nUser's question:\n${prompt}\n\nIndependent responses:\n${sourceText}`);
+          synthesis.body.textContent = answer;
+        } catch (error) {
+          synthesis.card.classList.add("error");
+          synthesis.body.textContent = `Could not synthesize the replies: ${error instanceof Error ? error.message : "Request failed."} The individual answers are still available below.`;
+        }
+      }
+      const successes = outcomes.filter(outcome => outcome.ok).length;
+      document.getElementById("results-title").textContent = "Your answers";
+      document.getElementById("results-count").textContent =
+        `${successes} of ${chosen.length} models answered${outcomes.some(outcome => !outcome.ok) ? " · Some requests failed" : ""}`;
+      askButton.disabled = false;
+      askButton.innerHTML = 'Ask all models <span aria-hidden="true">↗</span>';
+      modelList.querySelectorAll("button").forEach(button => { button.disabled = false; });
+      busy = false;
+    });
+    renderModels();
+  </script>
+</body>
+</html>
